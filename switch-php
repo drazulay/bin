@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+
+if [ "${whoami}" == "root" ]; then
+	echo "This script must be run by non-root users only"
+fi
+
+if [ -z $1 ]; then
+	echo "Need version as first argument"
+	exit 1
+fi
+
+OLD="valet-php@$(php -v | sed -n 's/PHP\ \(.*\)/\1/p' | head -c 3)"
+NEW="valet-php@${1}"
+
+brew unlink $OLD
+sudo brew services stop $OLD
+brew link $NEW
+sudo brew services restart $NEW
