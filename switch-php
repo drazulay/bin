@@ -14,6 +14,15 @@ fi
 OLD="valet-php@$(php -v | sed -n 's/PHP\ \(.*\)/\1/p' | head -c 3)"
 NEW="valet-php@${1}"
 
+function install_new()
+{
+	brew install --build-from-source $NEW
+	EXIT=$?
+	if [ $EXIT -gt 0 ]; then
+		activate_old
+		exit $EXIT
+	fi
+}
 function activate_old()
 {
 	echo "Activating ${OLD}.."
@@ -28,6 +37,10 @@ function deactivate_old()
 }
 function activate_new()
 {
+	if [ "$(brew info $NEW | grep -c "Not installed")" == "1" ]; then
+		echo "${NEW} not found locally, installing.."
+        	install_new
+        fi
 	echo "Activating ${NEW}.."
 	brew link $NEW
 	sudo brew services restart $NEW
@@ -44,20 +57,7 @@ if [ $(brew info $OLD | grep -c "Not installed") -eq 1 ]; then
 	echo "${OLD} is not installed, only going to activate ${NEW}."
 	activate_new
 else 
-	if [ $(brew info $NEW | grep -c "Not installed") -eq 1 ]; then
-		echo "${NEW} not found locally, building from source.."
-		brew install --build-from-source $NEW
-		if [ $? -gt 0 ]; then
-			activate_old
-			exit 2
-		fi
-	fi
 	deactivate_old && activate_new
 fi
 
 exit $?
-
-
-echo "Enabling ${NEW}.."
-brew link $NEW
-sudo brew services restart $NEW
